@@ -1,28 +1,30 @@
 <template>
   <div id="app">
     <Header></Header>
-    <TaskTable></TaskTable>
+    <router-view></router-view>
     <TaskAddModal></TaskAddModal>
   </div>
 </template>
 
 <script>
 import Header from './components/Header'
-import TaskTable from './components/TaskTable'
 import TaskAddModal from './components/TaskAddModal'
 
 export default {
   components: {
     Header,
-    TaskTable,
     TaskAddModal,
   }
 }
 </script>
 
 <style>
+@font-face {
+  font-family: 'NagomiGokubosoGothic';
+  src: url("/nagomigokubosogothic/NagomiGokubosoGothic-ExtraLight.otf");
+}
 #app {
-  font-family: 'Fredericka the Great', cursive, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'NagomiGokubosoGothic', "Batang", cursive, Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;

@@ -7,18 +7,14 @@
           <th>name</th>
           <th>detail</th>
           <th>done</th>
-          <th>delete</th>
-          <th>update</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="oneTaskRecord in taskTable" v-bind:key="oneTaskRecord.taskId" v-bind:name="oneTaskRecord.taskId">
+        <tr v-for="oneTaskRecord in deletedTaskTable" v-bind:key="oneTaskRecord.taskId" v-bind:name="oneTaskRecord.taskId">
           <td>{{oneTaskRecord.taskId}}</td>
-          <td><input type="text" v-bind:value="oneTaskRecord.taskName" v-bind:id="'taskName'+oneTaskRecord.taskId" v-on:change="onChange(oneTaskRecord.taskId)"></td>
-          <td><input type="text" v-bind:value="oneTaskRecord.taskDetail" v-bind:id="'taskDetail'+oneTaskRecord.taskId" v-on:change="onChange(oneTaskRecord.taskId)"></td>
-          <td><input type="checkbox" v-bind:id="'doneFlag'+oneTaskRecord.taskId" v-on:change="clickedDoneFlagCheckBox(oneTaskRecord.taskId)" value=0><label></label></td>
-          <td><input type="checkbox" v-bind:id="'deletedFlag'+oneTaskRecord.taskId" v-on:change="clickedDeleteFlagCheckBox(oneTaskRecord.taskId)" value=0><label></label></td>
-          <td><button v-on:click="reviseTask(oneTaskRecord.taskId)" v-bind:id="'updateButton'+oneTaskRecord.taskId" disabled>update!</button></td>
+          <td>{{oneTaskRecord.taskName}}</td>
+          <td>{{oneTaskRecord.taskDetail}}</td>
+          <td>{{oneTaskRecord.doneFlag}}</td>
         </tr>
       </tbody>
     </table>
@@ -35,8 +31,8 @@ export default {
       }
   },
   computed: {
-    taskTable() {
-      return this.$store.getters.taskTable;
+    deletedTaskTable() {
+      return this.$store.getters.deletedTaskTable;
     },
   },
   methods: {
@@ -56,22 +52,6 @@ export default {
         Icon: "error"
      })
     },
-    reviseTask(taskId) {
-      document.getElementById('updateButton'+taskId).disabled = true;
-      this.$store.dispatch('reviseTask', {
-        taskId: parseInt(taskId, 10),
-        taskName: document.getElementById('taskName'+taskId).value,
-        taskDetail: document.getElementById('taskDetail'+taskId).value,
-        doneFlag: document.getElementById('doneFlag'+taskId).value,
-        deletedFlag: document.getElementById('deletedFlag'+taskId).value
-      })
-      .then(() => {
-        this.success('task revised!');
-      })
-      .catch(() => {
-        this.error('failed to revise task');
-      });
-    },
     setWidth(taskTable) {
       if (window.matchMedia('(max-width: 736px)').matches) {
         taskTable.classList.remove('width-1024-and-margin-0-auto');
@@ -82,24 +62,12 @@ export default {
         taskTable.classList.add('width-736-and-margin-0-auto');
       }
     },
-    // 以下修正があった行の修正ボタンだけ活性化するようしたい。
-    onChange(taskId) {
-      document.getElementById('updateButton'+taskId).disabled = false;
-    },
-    clickedDoneFlagCheckBox(taskId) {
-      document.getElementById('updateButton'+taskId).disabled = false;
-      document.getElementById('doneFlag'+taskId).value = 1;
-    },
-    clickedDeleteFlagCheckBox(taskId) {
-      document.getElementById('updateButton'+taskId).disabled = false;
-      document.getElementById('deletedFlag'+taskId).value = 1;
-    }
   },
   mounted: function () {
     const taskTable = document.getElementsByClassName('task-table-component')[0];
     this.setWidth(taskTable);
     window.addEventListener('resize', this.setWidth(taskTable));
-    this.$store.dispatch('reflectTaskTableFromDb');
+    this.$store.dispatch('reflectDeletedTaskTable');
   },
   beforeDestroy: function () {
     window.removeEventListener('resize', this.handleResize);

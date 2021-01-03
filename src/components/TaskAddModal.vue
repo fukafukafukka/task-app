@@ -32,28 +32,49 @@ export default {
       taskDetail: '',
     }
   },
-  methods:{
-    openModal: function(){
+  methods: {
+    openModal() {
       this.showContent = true
     },
-    closeModal: function(){
+    closeModal() {
       this.showContent = false
     },
-    isEntered: function() {
+    isEntered() {
       if (this.taskName === '' || this.taskDetail === '') {
         return false;
       } else {
         return true;
       }
     },
+    success(msg) {
+      this.$toasted.show(msg, {
+        theme: "outline",
+        position: "top-center",
+        duration : 5000,
+        Icon: "done_all"
+     });
+    },
+    error(msg) {
+      this.$toasted.show(msg, {
+        theme: "outline",
+        position: "top-center",
+        duration : 5000,
+        Icon: "error"
+     })
+    },
     addTask: function() {
       this.$store.dispatch('addTask', {
-        taskNumber: 0,
         taskName: this.taskName,
         taskDetail: this.taskDetail,
-        status: 'Working',
-        options: ['Working', 'Done'],
-        });
+        doneFlag: 0,
+        deletedFlag: 0,
+      })
+      .then(() => {
+        this.success('task added!');
+      })
+      .catch(() => {
+        this.error('failed to add task');
+      });
       this.taskName = '';
       this.taskDetail = '';
       },

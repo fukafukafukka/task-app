@@ -6,19 +6,17 @@
           <th>taskId</th>
           <th>name</th>
           <th>detail</th>
-          <th>done</th>
           <th>delete</th>
           <th>update</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="oneTaskRecord in taskTable" v-bind:key="oneTaskRecord.taskId" v-bind:name="oneTaskRecord.taskId">
+        <tr v-for="oneTaskRecord in doneTaskTable" v-bind:key="oneTaskRecord.taskId" v-bind:name="oneTaskRecord.taskId">
           <td>{{oneTaskRecord.taskId}}</td>
-          <td><input type="text" v-bind:value="oneTaskRecord.taskName" v-bind:id="'taskName'+oneTaskRecord.taskId" v-on:change="onChange(oneTaskRecord.taskId)"></td>
-          <td><input type="text" v-bind:value="oneTaskRecord.taskDetail" v-bind:id="'taskDetail'+oneTaskRecord.taskId" v-on:change="onChange(oneTaskRecord.taskId)"></td>
-          <td><input type="checkbox" v-bind:id="'doneFlag'+oneTaskRecord.taskId" v-on:change="clickedDoneFlagCheckBox(oneTaskRecord.taskId)" value=0><label></label></td>
+          <td>{{oneTaskRecord.taskName}}</td>
+          <td>{{oneTaskRecord.taskDetail}}</td>
           <td><input type="checkbox" v-bind:id="'deletedFlag'+oneTaskRecord.taskId" v-on:change="clickedDeleteFlagCheckBox(oneTaskRecord.taskId)" value=0><label></label></td>
-          <td><button v-on:click="reviseTask(oneTaskRecord.taskId)" v-bind:id="'updateButton'+oneTaskRecord.taskId" disabled>update!</button></td>
+          <td><button v-on:click="reviseDoneTask(oneTaskRecord.taskId, oneTaskRecord.taskName, oneTaskRecord.taskDetail)" v-bind:id="'updateButton'+oneTaskRecord.taskId" disabled>update!</button></td>
         </tr>
       </tbody>
     </table>
@@ -35,8 +33,8 @@ export default {
       }
   },
   computed: {
-    taskTable() {
-      return this.$store.getters.taskTable;
+    doneTaskTable() {
+      return this.$store.getters.doneTaskTable;
     },
   },
   methods: {
@@ -56,13 +54,13 @@ export default {
         Icon: "error"
      })
     },
-    reviseTask(taskId) {
+    reviseDoneTask(taskId, taskName, taskDetail) {
       document.getElementById('updateButton'+taskId).disabled = true;
-      this.$store.dispatch('reviseTask', {
+      this.$store.dispatch('reviseDoneTask', {
         taskId: parseInt(taskId, 10),
-        taskName: document.getElementById('taskName'+taskId).value,
-        taskDetail: document.getElementById('taskDetail'+taskId).value,
-        doneFlag: document.getElementById('doneFlag'+taskId).value,
+        taskName: taskName,
+        taskDetail: taskDetail,
+        doneFlag: 1,
         deletedFlag: document.getElementById('deletedFlag'+taskId).value
       })
       .then(() => {
@@ -83,13 +81,6 @@ export default {
       }
     },
     // 以下修正があった行の修正ボタンだけ活性化するようしたい。
-    onChange(taskId) {
-      document.getElementById('updateButton'+taskId).disabled = false;
-    },
-    clickedDoneFlagCheckBox(taskId) {
-      document.getElementById('updateButton'+taskId).disabled = false;
-      document.getElementById('doneFlag'+taskId).value = 1;
-    },
     clickedDeleteFlagCheckBox(taskId) {
       document.getElementById('updateButton'+taskId).disabled = false;
       document.getElementById('deletedFlag'+taskId).value = 1;
@@ -99,7 +90,7 @@ export default {
     const taskTable = document.getElementsByClassName('task-table-component')[0];
     this.setWidth(taskTable);
     window.addEventListener('resize', this.setWidth(taskTable));
-    this.$store.dispatch('reflectTaskTableFromDb');
+    this.$store.dispatch('reflectDoneTaskTable');
   },
   beforeDestroy: function () {
     window.removeEventListener('resize', this.handleResize);
