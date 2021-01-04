@@ -197,12 +197,6 @@ export default new Vuex.Store({
             .catch(error => {
                 console.log(error);
                 commit("registerErrorInfo", error.response.status, error.response.statusText);
-
-                // 以下ログイン後トークンが無いか、切れたか、消した場合、再度ログインし直させる。
-                if(this.state.csrfTokenByLogined === null){
-                    // TOTO: preLoginコンポーネント遷移時にURLに元々遷移したかったpathを追加したい。
-                    router.push('/preLogin');
-                }
             });
         },
         reflectDoneTaskTable({commit}){
@@ -219,12 +213,6 @@ export default new Vuex.Store({
             .catch(error => {
                 console.log(error);
                 commit("registerErrorInfo", error.response.status, error.response.statusText);
-
-                // 以下ログイン後トークンが無いか、切れたか、消した場合、再度ログインし直させる。
-                if(this.state.csrfTokenByLogined === null){
-                    // TOTO: preLoginコンポーネント遷移時にURLに元々遷移したかったpathを追加したい。
-                    router.push('/preLogin');
-                }
             });
         },
         reflectDeletedTaskTable({commit}){
@@ -241,12 +229,6 @@ export default new Vuex.Store({
             .catch(error => {
                 console.log(error);
                 commit("registerErrorInfo", error.response.status, error.response.statusText);
-
-                // 以下ログイン後トークンが無いか、切れたか、消した場合、再度ログインし直させる。
-                if(this.state.csrfTokenByLogined === null){
-                    // TOTO: preLoginコンポーネント遷移時にURLに元々遷移したかったpathを追加したい。
-                    router.push('/preLogin');
-                }
             });
         },
         createUesr({commit}, user){
@@ -313,9 +295,4 @@ export default new Vuex.Store({
             })
         },
     },
-    // mounted: () => {
-    //     this.$store.watch(() => {
-    //         state => state.taskTable
-    //     })
-    // }
 })

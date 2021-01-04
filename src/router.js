@@ -21,7 +21,7 @@ import DoneTaskTable from './components/DoneTaskTable'
 import DeletedTaskTable from './components/DeletedTaskTable'
 import CreaateUser from './components/CreateUser'
 
-// import store from './store';
+import store from './store.js';
 
 let router = new VueRouter({
   routes: [
@@ -53,13 +53,13 @@ let router = new VueRouter({
   ]
 })
 
-// router.beforeEach((to, from, next) => {
-//   // isPublic でない場合(=認証が必要な場合)、かつ、ログインしていない場合
-//   if (to.matched.some(record => !record.meta.isPublic) && store.state.csrfTokenByLogined == null) {
-//     next({ path: '/preLogin', query: { redirect: to.fullPath }});
-//   } else {
-//     next();
-//   }
-// });
+router.beforeEach((to, from, next) => {
+  // isPublic でない場合(=認証が必要な場合)、かつ、ログインしていない場合
+  if (to.matched.some(record => !record.meta.isPublic) && store.state.csrfTokenByLogined === null) {
+    next({ path: '/preLogin', query: { redirect: to.fullPath }});
+  } else {
+    next();
+  }
+});
 
 export default router
