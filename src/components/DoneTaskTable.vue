@@ -3,7 +3,7 @@
     <table class="table table-striped table-bordered table-hover table-sm">
       <thead>
         <tr>
-          <th>taskId</th>
+          <th>index</th>
           <th>name</th>
           <th>detail</th>
           <th>delete</th>
@@ -11,12 +11,12 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="oneTaskRecord in doneTaskTable" v-bind:key="oneTaskRecord.taskId" v-bind:name="oneTaskRecord.taskId">
-          <td>{{oneTaskRecord.taskId}}</td>
+        <tr v-for="oneTaskRecord in doneTaskTable" v-bind:key="oneTaskRecord.index" v-bind:name="oneTaskRecord.index">
+          <td>{{oneTaskRecord.index}}</td>
           <td>{{oneTaskRecord.taskName}}</td>
           <td>{{oneTaskRecord.taskDetail}}</td>
-          <td><input type="checkbox" v-bind:id="'deletedFlag'+oneTaskRecord.taskId" v-on:change="clickedDeleteFlagCheckBox(oneTaskRecord.taskId)" value=0><label></label></td>
-          <td><button v-on:click="reviseDoneTask(oneTaskRecord.taskId, oneTaskRecord.taskName, oneTaskRecord.taskDetail)" v-bind:id="'updateButton'+oneTaskRecord.taskId" disabled>update!</button></td>
+          <td><input type="checkbox" v-bind:id="'deletedFlag'+oneTaskRecord.index" v-on:change="clickedDeleteFlagCheckBox(oneTaskRecord.index)" value=0><label></label></td>
+          <td><button v-on:click="reviseDoneTask(oneTaskRecord.index, oneTaskRecord.taskId, oneTaskRecord.taskName, oneTaskRecord.taskDetail)" v-bind:id="'updateButton'+oneTaskRecord.index" disabled>update!</button></td>
         </tr>
       </tbody>
     </table>
@@ -54,16 +54,17 @@ export default {
         Icon: "error"
      })
     },
-    reviseDoneTask(taskId, taskName, taskDetail) {
-      document.getElementById('updateButton'+taskId).disabled = true;
+    reviseDoneTask(index, taskId, taskName, taskDetail) {
       this.$store.dispatch('reviseDoneTask', {
+        index: parseInt(index, 10),
         taskId: parseInt(taskId, 10),
         taskName: taskName,
         taskDetail: taskDetail,
         doneFlag: 1,
-        deletedFlag: document.getElementById('deletedFlag'+taskId).value
+        deletedFlag: document.getElementById('deletedFlag'+index).value
       })
       .then(() => {
+        this.clearCheckBox(index);
         this.success('task revised!');
       })
       .catch(() => {
@@ -81,9 +82,18 @@ export default {
       }
     },
     // 以下修正があった行の修正ボタンだけ活性化するようしたい。
-    clickedDeleteFlagCheckBox(taskId) {
-      document.getElementById('updateButton'+taskId).disabled = false;
-      document.getElementById('deletedFlag'+taskId).value = 1;
+    clickedDeleteFlagCheckBox(index) {
+      if (document.getElementById('deletedFlag'+index).checked){
+        document.getElementById('updateButton'+index).disabled = false;
+        document.getElementById('deletedFlag'+index).value = 1;
+      } else {
+        document.getElementById('updateButton'+index).disabled = true;
+        document.getElementById('deletedFlag'+index).value = 0;
+      }
+    },
+    clearCheckBox(index){
+      document.getElementById('deletedFlag'+index).checked = false;
+      document.getElementById('deletedFlag'+index).value = 0;
     }
   },
   mounted: function () {

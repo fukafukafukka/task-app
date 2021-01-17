@@ -3,15 +3,15 @@
     <table class="table table-striped table-bordered table-hover table-sm">
       <thead>
         <tr>
-          <th>taskId</th>
+          <th>index</th>
           <th>name</th>
           <th>detail</th>
           <th>done</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="oneTaskRecord in deletedTaskTable" v-bind:key="oneTaskRecord.taskId" v-bind:name="oneTaskRecord.taskId">
-          <td>{{oneTaskRecord.taskId}}</td>
+        <tr v-for="oneTaskRecord in deletedTaskTable" v-bind:key="oneTaskRecord.index" v-bind:name="oneTaskRecord.index">
+          <td>{{oneTaskRecord.index}}</td>
           <td>{{oneTaskRecord.taskName}}</td>
           <td>{{oneTaskRecord.taskDetail}}</td>
           <td>{{oneTaskRecord.doneFlag}}</td>

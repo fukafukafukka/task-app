@@ -3,7 +3,7 @@
     <table class="table table-striped table-bordered table-hover table-sm">
       <thead>
         <tr>
-          <th>taskId</th>
+          <th>index</th>
           <th>name</th>
           <th>detail</th>
           <th>done</th>
@@ -12,13 +12,13 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="oneTaskRecord in taskTable" v-bind:key="oneTaskRecord.taskId" v-bind:name="oneTaskRecord.taskId">
-          <td>{{oneTaskRecord.taskId}}</td>
-          <td><input type="text" v-bind:value="oneTaskRecord.taskName" v-bind:id="'taskName'+oneTaskRecord.taskId" v-on:change="onChange(oneTaskRecord.taskId)"></td>
-          <td><input type="text" v-bind:value="oneTaskRecord.taskDetail" v-bind:id="'taskDetail'+oneTaskRecord.taskId" v-on:change="onChange(oneTaskRecord.taskId)"></td>
-          <td><input type="checkbox" v-bind:id="'doneFlag'+oneTaskRecord.taskId" v-on:change="clickedDoneFlagCheckBox(oneTaskRecord.taskId)" value=0><label></label></td>
-          <td><input type="checkbox" v-bind:id="'deletedFlag'+oneTaskRecord.taskId" v-on:change="clickedDeleteFlagCheckBox(oneTaskRecord.taskId)" value=0><label></label></td>
-          <td><button v-on:click="reviseTask(oneTaskRecord.taskId)" v-bind:id="'updateButton'+oneTaskRecord.taskId" disabled>update!</button></td>
+        <tr v-for="oneTaskRecord in taskTable" v-bind:key="oneTaskRecord.index" v-bind:name="oneTaskRecord.index">
+          <td>{{oneTaskRecord.index}}</td>
+          <td><input type="text" v-bind:value="oneTaskRecord.taskName" v-bind:id="'taskName'+oneTaskRecord.index" v-on:change="activateButton(oneTaskRecord.index)"></td>
+          <td><input type="text" v-bind:value="oneTaskRecord.taskDetail" v-bind:id="'taskDetail'+oneTaskRecord.index" v-on:change="activateButton(oneTaskRecord.index)"></td>
+          <td><input type="checkbox" v-bind:id="'doneFlag'+oneTaskRecord.index" v-on:change="clickedDoneFlagCheckBox(oneTaskRecord.index)" value=0><label></label></td>
+          <td><input type="checkbox" v-bind:id="'deletedFlag'+oneTaskRecord.index" v-on:change="clickedDeleteFlagCheckBox(oneTaskRecord.index)" value=0><label></label></td>
+          <td><button v-on:click="reviseTask(oneTaskRecord.index, oneTaskRecord.taskId)" v-bind:id="'updateButton'+oneTaskRecord.index" disabled>update!</button></td>
         </tr>
       </tbody>
     </table>
@@ -56,16 +56,19 @@ export default {
         Icon: "error"
      })
     },
-    reviseTask(taskId) {
-      document.getElementById('updateButton'+taskId).disabled = true;
+    reviseTask(index, taskId) {
+      // inputタグ内で修正した内容は、引数では取得できないため、dom操作で取得している。
       this.$store.dispatch('reviseTask', {
+        index: parseInt(index, 10),
         taskId: parseInt(taskId, 10),
-        taskName: document.getElementById('taskName'+taskId).value,
-        taskDetail: document.getElementById('taskDetail'+taskId).value,
-        doneFlag: document.getElementById('doneFlag'+taskId).value,
-        deletedFlag: document.getElementById('deletedFlag'+taskId).value
+        taskName: document.getElementById('taskName'+index).value,
+        taskDetail: document.getElementById('taskDetail'+index).value,
+        doneFlag: document.getElementById('doneFlag'+index).value,
+        deletedFlag: document.getElementById('deletedFlag'+index).value
       })
       .then(() => {
+        this.inactivateButton(index);
+        this.clearCheckBox(index);
         this.success('task revised!');
       })
       .catch(() => {
@@ -83,17 +86,37 @@ export default {
       }
     },
     // 以下修正があった行の修正ボタンだけ活性化するようしたい。
-    onChange(taskId) {
-      document.getElementById('updateButton'+taskId).disabled = false;
+    activateButton(index) {
+      document.getElementById('updateButton'+index).disabled = false;
     },
-    clickedDoneFlagCheckBox(taskId) {
-      document.getElementById('updateButton'+taskId).disabled = false;
-      document.getElementById('doneFlag'+taskId).value = 1;
+    inactivateButton(index) {
+      document.getElementById('updateButton'+index).disabled = true;
     },
-    clickedDeleteFlagCheckBox(taskId) {
-      document.getElementById('updateButton'+taskId).disabled = false;
-      document.getElementById('deletedFlag'+taskId).value = 1;
+    clickedDoneFlagCheckBox(index) {
+      if (document.getElementById('doneFlag'+index).checked){
+        document.getElementById('updateButton'+index).disabled = false;
+        document.getElementById('doneFlag'+index).value = 1;
+      } else {
+        document.getElementById('updateButton'+index).disabled = true;
+        document.getElementById('doneFlag'+index).value = 0;
+      }
+    },
+    clickedDeleteFlagCheckBox(index) {
+      if (document.getElementById('deletedFlag'+index).checked){
+        document.getElementById('updateButton'+index).disabled = false;
+        document.getElementById('deletedFlag'+index).value = 1;
+      } else {
+        document.getElementById('updateButton'+index).disabled = true;
+        document.getElementById('deletedFlag'+index).value = 0;
+      }
+    },
+    clearCheckBox(index){
+      document.getElementById('doneFlag'+index).checked = false;
+      document.getElementById('doneFlag'+index).value = 0;
+      document.getElementById('deletedFlag'+index).checked = false;
+      document.getElementById('deletedFlag'+index).value = 0;
     }
+
   },
   mounted: function () {
     const taskTable = document.getElementsByClassName('task-table-component')[0];

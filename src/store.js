@@ -9,13 +9,12 @@ export default new Vuex.Store({
     state: {
         userId: 1,
         taskTable: [],
-        taskIdList: [],
+        taskIndexList: [],
         doneTaskTable: [],
-        doneTaskIdList: [],
+        doneTaskIndexList: [],
         deletedTaskTable: [],
-        deletedTaskIdList: [],
-        csrfToken: null,
-        csrfTokenByLogined: null,
+        deletedTaskIndexList: [],
+        preLoginedCsrfToken: null,
         errorStatus: null,
         errorStatusText: null,
         // taskTable:[{
@@ -25,6 +24,7 @@ export default new Vuex.Store({
         //     taskDetail: "修正・新規作成・削除機能の作成",
         //     doneFlag: 0,
         //     deletedFlag: 0,
+        //     index: フロント側で設定する値。フロント側でのみ保持する。
         //   }]
     },
     getters: {
@@ -32,90 +32,137 @@ export default new Vuex.Store({
         doneTaskTable: state => state.doneTaskTable,
         deletedTaskTable: state => state.deletedTaskTable,
         errorStatus: state => state.errorStatus,
+        errorStatusText: state => state.errorStatusText,
     },
     // 以下、mutationsとは、ここでしか値を変えられないようにするためのもの。
     mutations: {
-        registerCsrfToken(state, csrfToken){
-            state.csrfToken = csrfToken;
+        registerPreLoginedCsrfToken(state, preLoginedcsrfToken){
+            state.preLoginedCsrfToken = preLoginedcsrfToken;
         },
-        registerCsrfTokenByLogined(state, csrfTokenByLogined){
-            state.csrfTokenByLogined = csrfTokenByLogined;
-        },
-        registerErrorInfo(state, errorStatus, errorStatusText){
-            state.errorStatus = errorStatus;
-            state.errorStatusText = errorStatusText;
+        registerErrorInfo(state, errorInfo){
+            state.errorStatus = errorInfo.errorStatus;
+            state.errorStatusText = errorInfo.errorStatusText;
         },
         refleshErrorInfo(state){
+            // 結局エラー内容は毎度上書きされるから要らないかも。
             state.errorStatus = '';
             state.errorStatusText = '';
         },
         reflectTaskTableFromDb(state, taskObjectList){
-            state.taskTable = taskObjectList;
-            for (let taskObject of taskObjectList) {
-                state.taskIdList.push(taskObject['taskId']);
-            }
+            // 配列を初期化
+            state.taskTable = []
+            taskObjectList.forEach((taskObject, index) => {
+                state.taskIndexList.push(index);
+                taskObject.index = index;
+                state.taskTable.push(taskObject);
+            })
         },
         reflectDoneTaskTableFromDb(state, doneTaskObjectList){
-            state.doneTaskTable = doneTaskObjectList;
-            for (let doneTaskObject of doneTaskObjectList) {
-                state.doneTaskIdList.push(doneTaskObject['taskId']);
-            }
+            // 配列を初期化
+            state.doneTaskTable = []
+            doneTaskObjectList.forEach((doneTaskObject, index) => {
+                state.doneTaskIndexList.push(index);
+                doneTaskObject.index = index;
+                state.doneTaskTable.push(doneTaskObject);
+            })
         },
         reflectDeletedTaskTableFromDb(state, deletedTaskObjectList){
-            state.deletedTaskTable = deletedTaskObjectList;
-            for (let deletedTaskObject of deletedTaskObjectList) {
-                state.deletedTaskIdList.push(deletedTaskObject['taskId']);
-            }
+            // 配列を初期化
+            state.deletedTaskTable = []
+            deletedTaskObjectList.forEach((deletedTaskObject, index) => {
+                state.deletedTaskIndexList.push(index);
+                deletedTaskObject.index = index;
+                state.deletedTaskTable.push(deletedTaskObject);
+            })
         },
         addToTaskTable(state, taskObject) {
-            // taskIdを既存のtaskId最後の値にプラス1した値に更新している。
-            if (state.taskIdList.length === 0){
-                taskObject.taskId = 1;
-            }else{
-                taskObject.taskId = state.taskIdList[state.taskIdList.length - 1] + 1;
+            // stateにタスクを追加する前に、タスクオブジェクトにindexを追加している。
+            // 理由:各オブジェクトごとに配列全体の何番目に位置するかを示すindexを与えていた方が、フロント側でタスク削除の管理しやすいから。(spliceメソッドが使いやすいから)
+            if (state.taskIndexList.length === 0){
+                // 最初のタスクのindexは0。
+                taskObject.index = 0;
+            } else{
+                // 2つ目以降のタスクのindexは、indexList長と値になる。
+                taskObject.index = state.taskIndexList.length;
             }
             state.taskTable.push(taskObject);
-            state.taskIdList.push(taskObject.taskId);
+            state.taskIndexList.push(taskObject.index);
         },
         addToDoneTaskTable(state, doneTaskObject){
-            if (state.doneTaskIdList.length === 0){
-                doneTaskObject.taskId = 1;
-            }else{
-                doneTaskObject.taskId = state.doneTaskIdList[state.doneTaskIdList.length - 1] + 1;
+            if (state.doneTaskIndexList.length === 0){
+                doneTaskObject.index = 0;
+            } else{
+                doneTaskObject.index = state.taskIndexList.length;
             }
             state.doneTaskTable.push(doneTaskObject);
-            state.doneTaskIdList.push(doneTaskObject.taskId);
+            state.doneTaskIndexList.push(doneTaskObject.index);
         },
         addToDeletedTaskTable(state, deletedTaskObject){
-            if (state.deletedTaskIdList.length === 0){
-                deletedTaskObject.taskId = 1;
-            }else{
-                deletedTaskObject.taskId = state.deletedTaskIdList[state.deletedTaskIdList.length - 1] + 1;
+            if (state.deletedTaskIndexList.length === 0){
+                deletedTaskObject.index = 0;
+            } else{
+                deletedTaskObject.index = state.deletedTaskIndexList.length;
             }
             state.deletedTaskTable.push(deletedTaskObject);
-            state.deletedTaskIdList.push(deletedTaskObject.taskId);
+            state.deletedTaskIndexList.push(deletedTaskObject.index);
         },
         reviseTaskTable(state, taskObject) {
-            state.taskTable.splice(state.taskIdList.indexOf( taskObject.taskId ), 1, taskObject);
+            state.taskTable.splice(taskObject.index, 1, taskObject);
         },
-        deleteFromTaskTable(state, taskId) {
-            state.taskTable.splice(state.taskIdList.indexOf( taskId ), 1);
-            state.taskIdList = state.taskIdList.filter(n => n !== taskId);
+        deleteFromTaskTable(state, deleteIndex) {
+            state.taskTable.splice(deleteIndex, 1);
+
+            // deleteIndexより前のindexと後のindexに分ける。後のindexに関してはそれぞれ-1する。
+            let beforeIndexList = [];
+            let afterIndexList = [];
+            beforeIndexList = state.taskIndexList.filter(index => index < deleteIndex);
+            afterIndexList = state.taskIndexList.filter(index => index > deleteIndex).map(index => index - 1);
+            state.taskIndexList = beforeIndexList.concat(afterIndexList);
+
+            let beforeTaskTable = [];
+            let afterTaskTable = [];
+            beforeTaskTable = state.taskTable.filter(task => task.index < deleteIndex);
+            afterTaskTable = state.taskTable.filter(task => task.index > deleteIndex);
+            let updatedAfterTaskTable = [];
+            for (let afterTask of afterTaskTable){
+                // memo:mapを使ってもうまく書く要素データ加工できる。
+                // pref:https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/Array/map#using_map_to_reformat_objects_in_an_array
+                afterTask.index = afterTask.index - 1;
+                updatedAfterTaskTable.push(afterTask);
+            }
+            state.taskTable = beforeTaskTable.concat(updatedAfterTaskTable);
         },
-        deleteFromDoneTaskTable(state, doneTaskId) {
-            state.doneTaskTable.splice(state.doneTaskIdList.indexOf( doneTaskId ), 1);
-            state.doneTaskIdList = state.doneTaskIdList.filter(n => n !== doneTaskId);
+        deleteFromDoneTaskTable(state, deleteIndex) {
+            state.doneTaskTable.splice(deleteIndex, 1);
+
+            // TODO: deleteのチェックマークついていてもいなくても削除で更新されてしまう挙動を修正
+            // TODO: 削除した次のタスクにチェックマークがついた状態のままになってしまう挙動を修正。
+            let beforeDoneTaskIndexList = []
+            let afterDoneTaskIndexList = []
+            beforeDoneTaskIndexList = state.doneTaskIndexList.filter(index => index < deleteIndex);
+            afterDoneTaskIndexList = state.doneTaskIndexList.filter(index => index > deleteIndex).map(index => index - 1);
+            state.doneTaskIndexList = beforeDoneTaskIndexList.concat(afterDoneTaskIndexList);
+
+            let beforeDoneTaskTable = []
+            let afterDoneTaskTable = []
+            beforeDoneTaskTable = state.doneTaskTable.filter(task => task.index < deleteIndex);
+            afterDoneTaskTable = state.doneTaskTable.filter(task => task.index > deleteIndex);
+            let updatedAfterDoneTaskTable = []
+            for (let afterDoneTask of afterDoneTaskTable) {
+                afterDoneTask.index = afterDoneTask.index - 1;
+                updatedAfterDoneTaskTable.push(afterDoneTask);
+            }
+            state.doneTaskTable = beforeDoneTaskTable.concat(updatedAfterDoneTaskTable);
         }
     },
     actions: {
-        addTask({commit, state}, taskObject) {
+        addTask({dispatch, commit, state}, taskObject) {
             taskObject.userId = state.userId;
             return new Promise((resolve, reject) => {
                 axios({
                     method: "POST",
                     url: `http://localhost:8080/task/insert`,
                     data: taskObject,
-                    _csrf: this.state.csrfToken,
                 })
                 .then(() => {
                     commit("addToTaskTable", taskObject);
@@ -123,28 +170,33 @@ export default new Vuex.Store({
                 })
                 .catch(error => {
                     console.log(error);
-                    commit("registerErrorInfo", error.response.status, error.response.statusText);
+                    if (error !== null && error.response !== undefined){
+                        if (error.response.status === 401 || error.response.status === 403){
+                            dispatch('getCsrfToken')
+                            router.push('preLogin')
+                        }
+                        commit("registerErrorInfo", {errorStatus:error.response.status,  errorStatusText:error.response.statusText});
+                    }
                     reject();
                 });
             })
         },
-        reviseTask({commit, state}, taskObject) {
+        reviseTask({dispatch, commit, state}, taskObject) {
             taskObject.userId = state.userId;
             return new Promise((resolve, reject) => {
                 axios({
                     method: "PUT",
                     url: `http://localhost:8080/task/update`,
                     data: taskObject,
-                    _csrf: this.state.csrfToken,
                 })
                 .then(() => {
                     // 削除commit
                     // 追加commit
                     if(taskObject.deletedFlag === "1"){
-                        commit("deleteFromTaskTable", taskObject.taskId);
+                        commit("deleteFromTaskTable", taskObject.index);
                         commit("addToDeletedTaskTable", taskObject);
                     } else if(taskObject.doneFlag === "1"){
-                        commit("deleteFromTaskTable", taskObject.taskId);
+                        commit("deleteFromTaskTable", taskObject.index);
                         commit("addToDoneTaskTable", taskObject);
                     } else{
                         commit("reviseTaskTable", taskObject);
@@ -153,41 +205,52 @@ export default new Vuex.Store({
                 })
                 .catch(error => {
                     console.log(error);
-                    commit("registerErrorInfo", error.response.status, error.response.statusText);
+                    if (error !== null && error.response !== undefined){
+                        if (error.response.status === 401 || error.response.status === 403){
+                            dispatch('getCsrfToken')
+                            router.push('preLogin')
+                        }
+                        commit("registerErrorInfo", {errorStatus:error.response.status,  errorStatusText:error.response.statusText});
+                    }
+                    // TODO: せっかくステータスコードもエラー内容も返ってきているのでこれをtoastで表示させる。
                     reject();
                 });
             })
         },
-        reviseDoneTask({commit, state}, taskObject) {
+        reviseDoneTask({dispatch, commit, state}, taskObject) {
             taskObject.userId = state.userId;
             return new Promise((resolve, reject) => {
                 axios({
                     method: "PUT",
                     url: `http://localhost:8080/task/update`,
                     data: taskObject,
-                    _csrf: this.state.csrfToken,
                 })
                 .then(() => {
                     // 削除commit
                     // 追加commit
                     if(taskObject.deletedFlag === "1"){
-                        commit("deleteFromDoneTaskTable", taskObject.taskId);
+                        commit("deleteFromDoneTaskTable", taskObject.index);
                         commit("addToDeletedTaskTable", taskObject);
                     }
                     resolve();
                 })
                 .catch(error => {
                     console.log(error);
-                    commit("registerErrorInfo", error.response.status, error.response.statusText);
+                    if (error !== null && error.response !== undefined){
+                        if (error.response.status === 401 || error.response.status === 403){
+                            dispatch('getCsrfToken')
+                            router.push('preLogin')
+                        }
+                        commit("registerErrorInfo", {errorStatus:error.response.status,  errorStatusText:error.response.statusText});
+                    }
                     reject();
                 });
             })
         },
-        reflectTaskTableFromDb({commit}){
+        reflectTaskTableFromDb({dispatch, commit}){
             axios({
                 method: "GET",
                 url: `http://localhost:8080/task/getNotYetTasks/1`,
-                _csrf: this.state.csrfToken,
             })
             .then((taskObjectList) => {
                 if(taskObjectList.data.length >= 1){
@@ -196,14 +259,19 @@ export default new Vuex.Store({
             })
             .catch(error => {
                 console.log(error);
-                commit("registerErrorInfo", error.response.status, error.response.statusText);
+                if (error !== null && error.response !== undefined){
+                    if (error.response.status === 401 || error.response.status === 403){
+                        dispatch('getCsrfToken')
+                        router.push('preLogin')
+                    }
+                    commit("registerErrorInfo", {errorStatus:error.response.status,  errorStatusText:error.response.statusText});
+                }
             });
         },
-        reflectDoneTaskTable({commit}){
+        reflectDoneTaskTable({dispatch, commit}){
             axios({
                 method: "GET",
                 url: `http://localhost:8080/task/getDoneTasks/1`,
-                _csrf: this.state.csrfToken,
             })
             .then((taskObjectList) => {
                 if(taskObjectList.data.length >= 1){
@@ -212,14 +280,19 @@ export default new Vuex.Store({
             })
             .catch(error => {
                 console.log(error);
-                commit("registerErrorInfo", error.response.status, error.response.statusText);
+                if (error !== null && error.response !== undefined){
+                    if (error.response.status === 401 || error.response.status === 403){
+                        dispatch('getCsrfToken')
+                        router.push('preLogin')
+                    }
+                    commit("registerErrorInfo", {errorStatus:error.response.status,  errorStatusText:error.response.statusText});
+                }
             });
         },
-        reflectDeletedTaskTable({commit}){
+        reflectDeletedTaskTable({dispatch, commit}){
             axios({
                 method: "GET",
                 url: `http://localhost:8080/task/getDeletedTasks/1`,
-                _csrf: this.state.csrfToken,
             })
             .then((taskObjectList) => {
                 if(taskObjectList.data.length >= 1){
@@ -228,16 +301,21 @@ export default new Vuex.Store({
             })
             .catch(error => {
                 console.log(error);
-                commit("registerErrorInfo", error.response.status, error.response.statusText);
+                if (error !== null && error.response !== undefined){
+                    if (error.response.status === 401 || error.response.status === 403){
+                        dispatch('getCsrfToken')
+                        router.push('preLogin')
+                    }
+                    commit("registerErrorInfo", {errorStatus:error.response.status,  errorStatusText:error.response.statusText});
+                }
             });
         },
-        createUesr({commit}, user){
+        createUesr({dispatch, commit}, user){
             return new Promise((resolve, reject) => {
                 axios({
                     method: "POST",
                     url: ``,
                     data: user,
-                    _csrf: this.state.csrfToken,
                 })
                 .then((user) => {
                     commit("registerUser", user.data);
@@ -245,12 +323,18 @@ export default new Vuex.Store({
                 })
                 .catch(error => {
                     console.log(error);
-                    commit("registerErrorInfo", error.response.status, error.response.statusText);
+                    if (error !== null && error.response !== undefined){
+                        if (error.response.status === 401 || error.response.status === 403){
+                            dispatch('getCsrfToken')
+                            router.push('preLogin')
+                        }
+                        commit("registerErrorInfo", {errorStatus:error.response.status,  errorStatusText:error.response.statusText});
+                    }
                     reject();
                 })
             })
         },
-        login({commit}, preLoginFormData){
+        login({dispatch, commit}, preLoginFormData){
             let params = new URLSearchParams();
             params.append('mailAddress', preLoginFormData.mailAddress);
             params.append('password', preLoginFormData.password);
@@ -259,10 +343,9 @@ export default new Vuex.Store({
                     method: 'POST',
                     url: `http://localhost:8080/login`,
                     data: params,
-                    _csrf: this.state.csrfToken,
+                    _csrf: this.state.preLoginedCsrfToken,
                 })
-                .then((response) => {
-                    commit("registerCsrfTokenByLogined", response.headers['XSRF-TOKEN']);
+                .then(() => {
                     commit("refleshErrorInfo");
                     if (typeof preLoginFormData.redirectUrl === 'undefined' || preLoginFormData.redirectUrl === ''){
                         router.push('/taskTable')
@@ -272,26 +355,41 @@ export default new Vuex.Store({
                     resolve();
                 })
                 .catch(error => {
-                    commit("registerErrorInfo", error.response.status, error.response.statusText);
+                    if(this.state.preLoginedCsrfToken === null){
+                        dispatch('getCsrfToken');
+                    }
+                    if (error !== null && error.response !== undefined){
+                        commit("registerErrorInfo", {errorStatus:error.response.status,  errorStatusText:error.response.statusText});
+                    }
                     reject();
                 })
             })
         },
         getCsrfToken({commit}){
-            axios({
-                method: "GET",
-                url: `http://localhost:8080/prelogin`,
-            })
-            .then((csrfToken) => {
-                if(csrfToken != null){
-                    commit("registerCsrfToken",
-                    csrfToken.data);
-                }
-            })
-            .catch(error => {
-                // TODO: statusText も画面に表示したいのでバッチ側でエラー詳細を返すように追加する。
-                commit("registerErrorInfo", error.response.status, error.response.statusText);
-                // TODO: errorページを作成し、以下でrouter.pushを実行するようにする。
+            return new Promise((resolve, reject) => {
+                axios({
+                    method: "GET",
+                    url: `http://localhost:8080/prelogin`,
+                })
+                .then((csrfToken) => {
+                    if(csrfToken != null){
+                        commit("registerPreLoginedCsrfToken",
+                        csrfToken.data);
+                    }
+                    resolve();
+                })
+                .catch(error => {
+                    // TODO: statusText も画面に表示したいのでバッチ側でエラー詳細を返すように追加する。
+                    if (error !== null && error.response !== undefined){
+                        commit("registerErrorInfo", {errorStatus:error.response.status,  errorStatusText:error.response.statusText});
+                    } else {
+                        // elseの場合は、サーバーからerror自体返ってきていないため、サーバー接続エラーと判定している。
+                        // TODO:vue.js側でNetwork Errorを検知する方法を調べたほうが良い。
+                        commit("registerErrorInfo", {errorStatus:500,  errorStatusText:"サーバー接続エラー。"});
+                    }
+                    router.push('error')
+                    reject();
+                })
             })
         },
     },
